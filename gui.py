@@ -143,29 +143,109 @@ def research_of_category():
     def res_of_category():
         res = ctk.CTkToplevel()
         res.title("按分类搜索")
-        res.geometry("450x350")
+        res.geometry("450x400")
         res.grab_set()
         res.transient(res_cate)
 
+        text_box = ctk.CTkTextbox(res,width=400,height=300)
+        text_box.pack(fill="both",expand=True)
+
         def res_of_cate():
-            cate1 = entry1.get()
             
-            pass
+            num = 0
+            cate1 = entry1.get()
+            text_box.configure(state="normal")
+            text_box.delete("1.0","end")
+            for record in records:
+                if record["category"] == cate1:
+                    num += 1
+                    temptime = record.get("time","未知时间")
+                    text_box.insert("end",f"{num}. {record['type']} - {record['amount']} - {record['category']} - {record['note']} - {temptime}\n")
+            if num == 0:
+                text_box.insert("end","没有该类型的数据")
+            text_box.configure(state = "disabled")
+            
 
         entry1 = ctk.CTkEntry(res,placeholder_text="请输入想搜索的类型: ")
         entry1.pack()
-
-        but1 = ctk.CTkButton(res,test="搜索",command=res_of_cate)
-
         
-
-        pass
+        but1 = ctk.CTkButton(res,text="搜索",command=res_of_cate)
+        but1.pack()
+        but2 = ctk.CTkButton(res,text="退出",command=res.destroy)
+        but2.pack()
 
     def res_of_amount():
-        pass
+        res = ctk.CTkToplevel()
+        res.title("按金额范围搜索")
+        res.geometry("450x400")
+        res.grab_set()
+        res.transient(res_cate)
+
+        text_box = ctk.CTkTextbox(res,width=400,height=300)
+        text_box.pack(fill="both",expand=True)
+
+        def res_amo():
+            num = 0
+            text_box.configure(state="normal")
+            text_box.delete("1.0","end")
+            min_amount = float(entry1.get())
+            max_amount = float(entry2.get())
+            for record in records:
+                r_amount = record.get("amount")
+                if r_amount >= min_amount and r_amount <= max_amount:
+                    num = num + 1
+                    temptime = record.get("time","未知时间")
+                    text_box.insert("end",f"{num}. {record['type']} - {record['amount']} - {record['category']} - {record['note']} - {temptime}\n")
+            if num == 0:
+                text_box.insert("end","没有该金额范围的记录！ \n")
+            text_box.configure(state="disabled")
+
+        entry1 = ctk.CTkEntry(res,placeholder_text="请输入最小金额")
+        entry1.pack()
+        entry2 = ctk.CTkEntry(res,placeholder_text="请输入最大金额")
+        entry2.pack()
+        but1 = ctk.CTkButton(res,text="搜索",command=res_amo)
+        but1.pack()
+        but2 = ctk.CTkButton(res,text="退出",command=res.destroy)
+        but2.pack()
+        
 
     def res_of_datetime():
-        pass
+        res = ctk.CTkToplevel()
+        res.title("按时间范围搜索")
+        res.geometry("450x400")
+        res.grab_set()
+        res.transient(res_cate)
+
+        text_box = ctk.CTkTextbox(res,width=400,height=300)
+        text_box.pack()
+
+        def res_time():
+            text_box.configure(state = "normal")
+            text_box.delete("1.0","end")
+            start_time = datetime.strptime(entry1.get(),"%Y-%m-%d")
+            end_time = datetime.strptime(entry2.get(),"%Y-%m-%d")
+            num = 0
+            for record in records:
+                if not record.get("time"):
+                    continue
+                r_time = datetime.strptime(record.get("time"),"%Y-%m-%d")
+                if r_time >= start_time and r_time <= end_time:
+                    num = num + 1
+                    text_box.insert("end",f"{num}. {record['type']} - {record['amount']} - {record['category']} - {record['note']} - {record["time"]}\n")
+            if num == 0:
+                text_box.insert("end","没有该日期范围的记录！ \n")
+            text_box.configure(state = "disabled")
+            pass
+
+        entry1 = ctk.CTkEntry(res,placeholder_text="请输入开始时间")
+        entry1.pack()
+        entry2 = ctk.CTkEntry(res,placeholder_text="请输入结束时间")
+        entry2.pack()
+        but1 = ctk.CTkButton(res,text="搜索",command=res_time)
+        but1.pack()
+        but2 = ctk.CTkButton(res,text="退出",command=res.destroy)
+        but2.pack()
 
     button1 = ctk.CTkButton(res_cate,text="1. 按分类搜索",command=res_of_category)
     button1.pack(pady = 8)
