@@ -120,6 +120,8 @@ def view_monthly_summary():
     for record in records:
         if not record.get("time"):
             continue
+        if datetime.strptime(record.get("time"),"%Y-%m-%d").year != current_time.year:
+            continue
         if datetime.strptime(record.get("time"),"%Y-%m-%d").month != current_time.month:
             continue
         if record["type"] == "收入" : 

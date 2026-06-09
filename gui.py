@@ -1,14 +1,12 @@
 import customtkinter as ctk
 import json
 from datetime import datetime
+import os
 
 records = []
-with open("records.json","r",encoding="utf-8") as f:
-    records = (json.load(f))
-
-#退出程序
-def quit_record():
-    exit()
+if os.path.exists("records.json"):
+    with open("records.json","r",encoding="utf-8") as f:
+        records = (json.load(f))
 
 #将记录保存进本地json
 def Save_date():
@@ -18,6 +16,8 @@ def Save_date():
 
 def record_transaction():
     def r_save_fuc():
+        text_box.configure(state = "normal")
+        text_box.delete("1.0","end")
         t_type = r_Typ.get()
         amount = r_amount.get()
         category = r_cate.get()
@@ -33,11 +33,12 @@ def record_transaction():
                 "time": times
             }
             records.append(record)
+            text_box.insert("end",f"{record['type']} - {record['amount']} - {record['category']} - {record['note']} - {times}\n")
             Save_date()
-            rec_tra.destroy()
-            print("保存数据")
         except ValueError:
-            print("请输入有效金额!!!!不保存数据")
+            text_box.insert("end","请输入有效金额!!!!不保存数据")
+
+        text_box.configure(state="disabled")
         
 
     rec_tra = ctk.CTkToplevel()
@@ -46,6 +47,11 @@ def record_transaction():
 
     rec_tra.grab_set()
     rec_tra.transient(app)
+
+    text_box = ctk.CTkTextbox(rec_tra,width=400,height=50)
+    text_box.pack()
+
+    
 
     r_Typ = ctk.CTkOptionMenu(rec_tra,values=["收入","支出"])
     r_Typ.set("支出")
@@ -64,6 +70,9 @@ def record_transaction():
    
     r_save = ctk.CTkButton(rec_tra,text="保存",command=r_save_fuc)
     r_save.pack()
+
+    r_quit = ctk.CTkButton(rec_tra,text="退出",command=rec_tra.destroy)
+    r_quit.pack()
 
 def view_all_records():
     rec_view_a = ctk.CTkToplevel()
@@ -188,16 +197,19 @@ def research_of_category():
             num = 0
             text_box.configure(state="normal")
             text_box.delete("1.0","end")
-            min_amount = float(entry1.get())
-            max_amount = float(entry2.get())
-            for record in records:
-                r_amount = record.get("amount")
-                if r_amount >= min_amount and r_amount <= max_amount:
-                    num = num + 1
-                    temptime = record.get("time","未知时间")
-                    text_box.insert("end",f"{num}. {record['type']} - {record['amount']} - {record['category']} - {record['note']} - {temptime}\n")
-            if num == 0:
-                text_box.insert("end","没有该金额范围的记录！ \n")
+            try :
+                min_amount = float(entry1.get())
+                max_amount = float(entry2.get())
+                for record in records:
+                    r_amount = record.get("amount")
+                    if r_amount >= min_amount and r_amount <= max_amount:
+                        num = num + 1
+                        temptime = record.get("time","未知时间")
+                        text_box.insert("end",f"{num}. {record['type']} - {record['amount']} - {record['category']} - {record['note']} - {temptime}\n")
+                if num == 0:
+                    text_box.insert("end","没有该金额范围的记录！ \n")
+            except ValueError:
+                text_box.insert("end","请输入正确的金额！！！！")
             text_box.configure(state="disabled")
 
         entry1 = ctk.CTkEntry(res,placeholder_text="请输入最小金额")
@@ -290,7 +302,7 @@ btn6.pack(pady = 8)
 btn7 = ctk.CTkButton(app,text="7. 修改记录",width=200)
 btn7.pack(pady = 8)
 
-btn8 = ctk.CTkButton(app,text="8. 退出",width=200,command = quit_record)
+btn8 = ctk.CTkButton(app,text="8. 退出",width=200,command = app.destroy)
 btn8.pack(pady = 8)
 
 app.mainloop()
