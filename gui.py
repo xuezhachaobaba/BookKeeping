@@ -13,6 +13,13 @@ def Save_date():
     with open("records.json","w",encoding="utf-8") as f:
         json.dump(records,f,ensure_ascii=False,indent=4)
 
+def show_all(text_box):
+    text_box.configure(state = "normal")
+    text_box.delete("1.0","end")
+    for idx,record in enumerate(records,1):
+        temp_time = record.get("time","未知时间")
+        text_box.insert(f"end",f"{idx}. {record['type']} - {record['amount']} - {record['category']} - {record['note']} - {temp_time}\n")
+
 
 def record_transaction():
     def r_save_fuc():
@@ -82,9 +89,10 @@ def view_all_records():
     rec_view_a.transient(app)
     
     text_box = ctk.CTkTextbox(rec_view_a,width=550, height=300)
-    for idx,record in enumerate(records,1):
-        temp_time = record.get("time","未知时间")
-        text_box.insert(f"end",f"{idx}. {record['type']} - {record['amount']} - {record['category']} - {record['note']} - {temp_time}\n")
+    show_all(text_box)
+    # for idx,record in enumerate(records,1):
+    #     temp_time = record.get("time","未知时间")
+    #     text_box.insert(f"end",f"{idx}. {record['type']} - {record['amount']} - {record['category']} - {record['note']} - {temp_time}\n")
     text_box.configure(state="disabled")
     text_box.pack()
 
@@ -99,24 +107,30 @@ def view_monthly_summary():
     rec_view_m.transient(app)
 
     text_box = ctk.CTkTextbox(rec_view_m,width=400,height=300)
+    text_box.pack()
     temptime = datetime.now()
     all_income = 0
     all_expense = 0
     for record in records:
         if not record.get("time"):
             continue
-        if datetime.strptime(record.get("time"),"%Y-%m-%d").month != temptime.month:
+        record_time = datetime.strptime(record.get("time"),"%Y-%m-%d")
+        if record_time.year != temptime.year:
+            continue
+        if record_time.month != temptime.month:
             continue
         if record.get("type") == "收入":
             all_income += record.get("amount")
         if record.get("type") == "支出":
             all_expense += record.get("amount")
     all_balance = all_income - all_expense
+    text_box.configure(state="normal")
+    text_box.delete("1.0","end")
     text_box.insert("end",f"{temptime.year}年{temptime.month}月数据统计如下\n")
     text_box.insert("end",f"月总收入为{all_income}\n")
     text_box.insert("end",f"月总支出为{all_expense}\n")
     text_box.insert("end",f"月总结余为{all_balance}\n")
-    text_box.pack()
+    text_box.configure(state="disabled")
 
     r_button = ctk.CTkButton(rec_view_m,text="关闭",command=rec_view_m.destroy)
     r_button.pack()
@@ -129,6 +143,9 @@ def expense_category_stat():
     exp_cate_stat.geometry("500x400")
 
     text_box = ctk.CTkTextbox(exp_cate_stat,width=400,height=300)
+    text_box.pack()
+    text_box.configure(state="normal")
+    text_box.delete("1.0","end")
     category_total = {}
     for record in records:
         if record.get("type") != "支出" :
@@ -137,7 +154,7 @@ def expense_category_stat():
         category_total[temp_category] = category_total.get(temp_category,0) + record["amount"]
     for key,value in category_total.items():
         text_box.insert("end",f"{key}的总支出为：{value}\n")
-    text_box.pack()
+    text_box.configure(state="disabled")
     
     r_button = ctk.CTkButton(exp_cate_stat,text="关闭",command=exp_cate_stat.destroy)
     r_button.pack()
@@ -235,20 +252,22 @@ def research_of_category():
         def res_time():
             text_box.configure(state = "normal")
             text_box.delete("1.0","end")
-            start_time = datetime.strptime(entry1.get(),"%Y-%m-%d")
-            end_time = datetime.strptime(entry2.get(),"%Y-%m-%d")
-            num = 0
-            for record in records:
-                if not record.get("time"):
-                    continue
-                r_time = datetime.strptime(record.get("time"),"%Y-%m-%d")
-                if r_time >= start_time and r_time <= end_time:
-                    num = num + 1
-                    text_box.insert("end",f"{num}. {record['type']} - {record['amount']} - {record['category']} - {record['note']} - {record["time"]}\n")
-            if num == 0:
-                text_box.insert("end","没有该日期范围的记录！ \n")
+            try:
+                start_time = datetime.strptime(entry1.get(),"%Y-%m-%d")
+                end_time = datetime.strptime(entry2.get(),"%Y-%m-%d")
+                num = 0
+                for record in records:
+                    if not record.get("time"):
+                        continue
+                    r_time = datetime.strptime(record.get("time"),"%Y-%m-%d")
+                    if r_time >= start_time and r_time <= end_time:
+                        num = num + 1
+                        text_box.insert("end",f"{num}. {record['type']} - {record['amount']} - {record['category']} - {record['note']} - {record["time"]}\n")
+                if num == 0:
+                    text_box.insert("end","没有该日期范围的记录！ \n")
+            except ValueError:
+                text_box.insert("end","输入的日期有误！")
             text_box.configure(state = "disabled")
-            pass
 
         entry1 = ctk.CTkEntry(res,placeholder_text="请输入开始时间")
         entry1.pack()
@@ -272,7 +291,43 @@ def research_of_category():
     button4.pack(pady = 8)
 
 
-    pass
+
+def record_delete():
+    rec_delete = ctk.CTkToplevel()
+    rec_delete.title("删除记录")
+    rec_delete.geometry("500x400")
+    rec_delete.grab_set()
+    rec_delete.transient(app)
+
+    def del_rec():
+        text_box.configure(state="normal")
+        try:
+            num = int(entry1.get())
+            if num <= 0 or num > len(records):
+                text_box.insert("end","请输入正确的数字编号")
+            else:
+                records.pop(num-1)
+                show_all(text_box)
+                text_box.insert("end","删除成功")
+        except ValueError:
+            text_box.insert("end","请输入数字！！！")
+        text_box.configure(state="disabled")
+
+
+    text_box = ctk.CTkTextbox(rec_delete,width=400,height=300)
+    text_box.pack()
+    text_box.configure(state="normal")
+    entry1 = ctk.CTkEntry(rec_delete,width=20,height=20)
+    entry1.pack()
+    if len(records) != 0:
+        show_all(text_box)
+        button1 = ctk.CTkButton(rec_delete,text="删除",command=del_rec)
+        button1.pack()
+    else:
+        text_box.insert("end","记录为空，无法删除，请退出")
+    text_box.configure(state = "disabled")
+    button2 = ctk.CTkButton(rec_delete,text="退出",command=rec_delete.destroy)
+    button2.pack()
 
 app = ctk.CTk()
 app.title("记账本")
@@ -296,7 +351,7 @@ btn4.pack(pady = 8)
 btn5 = ctk.CTkButton(app,text="5. 搜索记录",width=200,command=research_of_category)
 btn5.pack(pady = 8)
 
-btn6 = ctk.CTkButton(app,text="6. 删除记录",width=200)
+btn6 = ctk.CTkButton(app,text="6. 删除记录",width=200,command=record_delete)
 btn6.pack(pady = 8)
 
 btn7 = ctk.CTkButton(app,text="7. 修改记录",width=200)
