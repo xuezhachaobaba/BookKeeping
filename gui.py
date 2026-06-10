@@ -41,7 +41,7 @@ def r_save_fuc(text_box,r_Typ,r_amount,r_cate,r_note):
             }
             records.append(record)
             text_box.insert("end",f"{record['type']} - {record['amount']} - {record['category']} - {record['note']} - {times}\n")
-            Save_date()
+            save_date()
         except ValueError:
             text_box.insert("end","请输入有效金额!!!!不保存数据")
 
@@ -66,7 +66,7 @@ def r_modify_fuc(text_box,r_Typ,r_amount,r_cate,r_note,num):
             }
             records[num-1]=record
             text_box.insert("end",f"{record['type']} - {record['amount']} - {record['category']} - {record['note']} - {times}\n")
-            Save_date()
+            save_date()
         except ValueError:
             text_box.insert("end","请输入有效金额!!!!不保存数据")
 
@@ -417,8 +417,6 @@ def record_modify():
         show_all(text_box)
         button1 = ctk.CTkButton(rec_modify,text="修改",command=mod_rec)
         button1.pack()
-        text_box.delete("1.0","end")
-        show_all(text_box)
     else:
         text_box.insert("end","记录为空，无法修改，请退出")
     text_box.configure(state = "disabled")
