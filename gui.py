@@ -9,7 +9,7 @@ if os.path.exists("records.json"):
         records = (json.load(f))
 
 #将记录保存进本地json
-def Save_date():
+def save_date():
     with open("records.json","w",encoding="utf-8") as f:
         json.dump(records,f,ensure_ascii=False,indent=4)
 
@@ -21,8 +21,8 @@ def show_all(text_box):
         text_box.insert(f"end",f"{idx}. {record['type']} - {record['amount']} - {record['category']} - {record['note']} - {temp_time}\n")
 
 
-def record_transaction():
-    def r_save_fuc():
+
+def r_save_fuc(text_box,r_Typ,r_amount,r_cate,r_note):
         text_box.configure(state = "normal")
         text_box.delete("1.0","end")
         t_type = r_Typ.get()
@@ -46,8 +46,34 @@ def record_transaction():
             text_box.insert("end","请输入有效金额!!!!不保存数据")
 
         text_box.configure(state="disabled")
-        
 
+def r_modify_fuc(text_box,r_Typ,r_amount,r_cate,r_note,num):
+        text_box.configure(state = "normal")
+        text_box.delete("1.0","end")
+        t_type = r_Typ.get()
+        amount = r_amount.get()
+        category = r_cate.get()
+        note = r_note.get()
+        times = datetime.now().strftime("%Y-%m-%d")
+        try :
+            amount = float(amount)
+            record = {
+                "type": t_type,
+                "amount": amount,
+                "category": category,
+                "note": note,
+                "time": times
+            }
+            records[num-1]=record
+            text_box.insert("end",f"{record['type']} - {record['amount']} - {record['category']} - {record['note']} - {times}\n")
+            Save_date()
+        except ValueError:
+            text_box.insert("end","请输入有效金额!!!!不保存数据")
+
+        text_box.configure(state="disabled")
+
+
+def record_transaction():
     rec_tra = ctk.CTkToplevel()
     rec_tra.title("记一笔")
     rec_tra.geometry("400x300")
@@ -75,7 +101,7 @@ def record_transaction():
     r_note = ctk.CTkEntry(rec_tra,placeholder_text="请输入备注 ")
     r_note.pack()
    
-    r_save = ctk.CTkButton(rec_tra,text="保存",command=r_save_fuc)
+    r_save = ctk.CTkButton(rec_tra,text="保存",command=lambda:r_save_fuc(text_box,r_Typ,r_amount,r_cate,r_note))
     r_save.pack()
 
     r_quit = ctk.CTkButton(rec_tra,text="退出",command=rec_tra.destroy)
@@ -90,9 +116,6 @@ def view_all_records():
     
     text_box = ctk.CTkTextbox(rec_view_a,width=550, height=300)
     show_all(text_box)
-    # for idx,record in enumerate(records,1):
-    #     temp_time = record.get("time","未知时间")
-    #     text_box.insert(f"end",f"{idx}. {record['type']} - {record['amount']} - {record['category']} - {record['note']} - {temp_time}\n")
     text_box.configure(state="disabled")
     text_box.pack()
 
@@ -329,6 +352,79 @@ def record_delete():
     button2 = ctk.CTkButton(rec_delete,text="退出",command=rec_delete.destroy)
     button2.pack()
 
+
+def record_modify():
+
+    def mod_rec():
+        text_box.configure(state = "normal")
+        try:
+            num = int(entry1.get())
+            if num <= 0 or num > len(records):
+                text_box.insert("end","请输入正确的数字编号")
+            else:
+                r_mod = ctk.CTkToplevel()
+                r_mod.title("修改记录")
+                r_mod.geometry("450x350")
+                r_mod.grab_set()
+                r_mod.transient(rec_modify)
+
+                mod_text_box = ctk.CTkTextbox(r_mod,width=400,height=50)
+                mod_text_box.pack()
+
+    
+
+                r_Typ = ctk.CTkOptionMenu(r_mod,values=["收入","支出"])
+                r_Typ.set(records[num-1]["type"])
+                r_Typ.pack()
+
+                r_amount = ctk.CTkEntry(r_mod)
+                r_amount.insert(0,str(records[num-1]["amount"]))
+                r_amount.pack()
+
+                r_category = ["餐饮","交通","购物","娱乐","工资"]
+                r_cate = ctk.CTkOptionMenu(r_mod,values=r_category)
+                r_cate.set(records[num-1]["category"])
+                r_cate.pack()
+
+                r_note = ctk.CTkEntry(r_mod)
+                r_note.insert(0,str(records[num-1]["note"]))
+                r_note.pack()
+
+                button3 = ctk.CTkButton(r_mod,text="修改",command=lambda:r_modify_fuc(mod_text_box,r_Typ,r_amount,r_cate,r_note,num))
+                button3.pack()
+                button4 = ctk.CTkButton(r_mod,text="退出",command=r_mod.destroy)
+                button4.pack()
+        except ValueError:
+            text_box.insert("end","请输入数字\n")
+        text_box.configure(state="disabled")
+
+
+        
+    rec_modify = ctk.CTkToplevel()
+    rec_modify.title("修改记录")
+    rec_modify.geometry("500x400")
+    rec_modify.grab_set()
+    rec_modify.transient(app)
+
+    text_box = ctk.CTkTextbox(rec_modify,width=400,height=300)
+    text_box.pack()
+    text_box.configure(state="normal")
+
+    entry1 = ctk.CTkEntry(rec_modify,width=20,height=20)
+    entry1.pack()
+
+    if len(records) != 0:
+        show_all(text_box)
+        button1 = ctk.CTkButton(rec_modify,text="修改",command=mod_rec)
+        button1.pack()
+        text_box.delete("1.0","end")
+        show_all(text_box)
+    else:
+        text_box.insert("end","记录为空，无法修改，请退出")
+    text_box.configure(state = "disabled")
+    button2 = ctk.CTkButton(rec_modify,text="退出",command=rec_modify.destroy)
+    button2.pack()
+
 app = ctk.CTk()
 app.title("记账本")
 app.geometry("500x450")
@@ -354,7 +450,7 @@ btn5.pack(pady = 8)
 btn6 = ctk.CTkButton(app,text="6. 删除记录",width=200,command=record_delete)
 btn6.pack(pady = 8)
 
-btn7 = ctk.CTkButton(app,text="7. 修改记录",width=200)
+btn7 = ctk.CTkButton(app,text="7. 修改记录",width=200,command=record_modify)
 btn7.pack(pady = 8)
 
 btn8 = ctk.CTkButton(app,text="8. 退出",width=200,command = app.destroy)
